@@ -25,9 +25,10 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
     parent_admin = None
     parent_opts = None
     index_template = 'hierarchicaladmin/index.html'
-    list_view_template = 'hierarchicaladmin/list_view.html'
+    change_list_template = 'hierarchicaladmin/change_list.html'
     change_form_template = 'hierarchicaladmin/change_form.html'
     delete_confirmation_template = 'hierarchicaladmin/delete_confirmation.html'
+    delete_selected_confirmation_template = 'hierarchicaladmin/delete_selected_confirmation.html'
     object_history_template = 'hierarchicaladmin/object_history.html'
     
     def __init__(self, *args, **kwargs):
@@ -259,6 +260,7 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         context = {
             'title': u'%s' % obj,
             'original' : obj,
+            'opts' : obj._meta,
             'app_list': app_list,
             'root_path': self.root_path,
             'can_view_index' : self.can_view_index(request),

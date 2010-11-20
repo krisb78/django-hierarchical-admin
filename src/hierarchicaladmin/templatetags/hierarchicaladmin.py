@@ -13,11 +13,15 @@ def hierarchical_breadcrumbs(parent_chain, upinit=''):
     parents.reverse()
     breadcrumbs = []
     href = upinit
-    for parent in parent_chain:
+    
+    for parent in parents:
         href += '../'
-        breadcrumbs.append( (parent, href,) )
+        parent_obj_breadcrumb = parent, href
         href += '../'
-        breadcrumbs.append( (parent._meta.verbose_name_plural, href,) )
+        parent_list_breadcrumb = parent._meta.verbose_name_plural, href
+        breadcrumbs.append( parent_obj_breadcrumb )
+        breadcrumbs.append( parent_list_breadcrumb )
+    
     breadcrumbs.reverse()
     
     return {

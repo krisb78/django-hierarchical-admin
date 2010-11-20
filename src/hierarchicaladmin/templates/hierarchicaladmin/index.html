@@ -5,6 +5,7 @@
 {% if not is_popup %}
 <div class="breadcrumbs">
      {% hierarchical_breadcrumbs parent_chain "../" %}
+     <a href="../">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
      {{ original|truncatewords:"18" }}
 </div>
 {% endif %}
