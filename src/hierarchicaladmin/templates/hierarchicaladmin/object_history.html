@@ -1,0 +1,11 @@
+{% extends "admin/object_history.html" %}
+{% load i18n hierarchicaladmin %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    {% hierarchical_breadcrumbs parent_chain "../../" %} 
+    <a href="../../">{{ module_name }}</a> &rsaquo; 
+    <a href="../">{{ object|truncatewords:"18" }}</a> &rsaquo; 
+    {% trans 'History' %}
+</div>
+{% endblock %}

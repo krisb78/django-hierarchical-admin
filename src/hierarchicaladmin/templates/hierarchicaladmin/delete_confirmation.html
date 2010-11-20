@@ -1,0 +1,11 @@
+{% extends "admin/delete_confirmation.html" %}
+{% load i18n hierarchicaladmin %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+     {% hierarchical_breadcrumbs parent_chain "../../" %} 
+     <a href="../../">{{ opts.verbose_name_plural|capfirst }}</a> &rsaquo;
+     <a href="../">{{ object|truncatewords:"18" }}</a> &rsaquo;
+     {% trans 'Delete' %}
+</div>
+{% endblock %}
