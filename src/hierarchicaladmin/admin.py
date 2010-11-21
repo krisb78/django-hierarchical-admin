@@ -133,7 +133,7 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
                                              model._meta.module_name),
                     include(model_admin.urls))
             )
-            print 'added %s to urls' % model._meta.module_name
+            
         return urlpatterns   
                 
     def get_parent_chain(self, request):
