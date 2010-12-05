@@ -40,3 +40,7 @@ svn-commit*.tmp
 .amateras
 .settings
 .settings/*
+.build
+.build/*
+.dist
+.dist/*
