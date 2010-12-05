@@ -25,7 +25,7 @@ from hierarchicaladmin.exceptions import DashboardOverride
 class HierarchicalModelAdmin(admin.ModelAdmin):
     parent_admin = None
     parent_opts = None
-    index_template = 'hierarchicaladmin/index.html'
+    index_template = None
     change_list_template = 'hierarchicaladmin/change_list.html'
     change_form_template = 'hierarchicaladmin/change_form.html'
     delete_confirmation_template = 'hierarchicaladmin/delete_confirmation.html'
@@ -182,6 +182,8 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
             
         parent_chain.reverse()
         prefix = '_'.join(parent_chain)
+        if prefix:
+            prefix += '_'
 
         info = (prefix,
                 self.model._meta.app_label, 
@@ -190,19 +192,19 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         urlpatterns = patterns('',
             url(r'^$',
                 wrap(self.changelist_view),
-                name='%s_%s_%s_changelist' % info),
+                name='%s%s_%s_changelist' % info),
             url(r'^add/$',
                 wrap(self.add_view),
-                name='%s_%s_%s_add' % info),
+                name='%s%s_%s_add' % info),
             url(r'^(?P<object_id>.+)/history/$',
                 wrap(self.history_view),
-                name='%s_%s_%s_history' % info),
+                name='%s%s_%s_history' % info),
             url(r'^(?P<object_id>.+)/delete/$',
                 wrap(self.delete_view),
-                name='%s_%s_%s_delete' % info),
+                name='%s%s_%s_delete' % info),
             url(r'^(?P<object_id>.+)/$',
                 wrap(self.change_view),
-                name='%s_%s_%s_change' % info),
+                name='%s%s_%s_change' % info),
         )
         return self.get_sub_urls() + urlpatterns
 
@@ -237,6 +239,8 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         Displays the main admin index page, which lists all of the installed
         apps that have been registered in this site.
         """        
+        model = self.model
+        opts = model._meta
         app_dict = {}
         user = request.user
         for model, model_admin in self._registry.items():
@@ -282,7 +286,14 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         }
         context.update(extra_context or {})
         context_instance = template.RequestContext(request, current_app=self.admin_site.name)
-        return render_to_response(self.index_template or 'admin/hierarchicaladmin/index.html', context,
+        model = self.model
+        opts = model._meta
+        app_label = opts.app_label
+        return render_to_response(self.index_template or [ 
+            "admin/%s/%s/hierarchical_dashboard.html" % (app_label, opts.object_name.lower()),
+            "admin/%s/hierarchical_dashboard.html" % app_label,
+            "admin/hierarchical_dashboard.html"],                                  
+            context,
             context_instance=context_instance
         )
 
