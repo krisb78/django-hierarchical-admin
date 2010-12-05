@@ -40,7 +40,10 @@ svn-commit*.tmp
 .amateras
 .settings
 .settings/*
-.build
-.build/*
-.dist
-.dist/*
+build
+build/*
+dist
+dist/*
+*.egg-info
+*.egg-info/*
+
