@@ -275,7 +275,7 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
             context_instance=context_instance
         )
 
-    def link_to_parent(self, obj, parent_obj, form):
+    def link_to_parent(self, request, obj, parent_obj, form):
         setattr(obj, self.parent_lookup, parent_obj)
         
     def save_model(self, request, obj, form, change):
@@ -283,6 +283,6 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         parent_obj = self.get_parent_obj(request)
         
         if not change:
-            self.link_to_parent(obj, parent_obj, form)
+            self.link_to_parent(request, obj, parent_obj, form)
         
         super(HierarchicalModelAdmin, self).save_model(request, obj, form, change)
