@@ -144,7 +144,11 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
             request.parent_chain.append(self.parent_admin.get_object(request, parent_id))
         else:
             request.parent_chain = []
-        
+            
+    def get_parent_obj(self, request):
+        parent_chain = request.parent_chain
+        parent_obj = (parent_chain and parent_chain[-1]) or None        
+        return parent_obj
             
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url
@@ -271,14 +275,14 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
             context_instance=context_instance
         )
 
-    def link_to_parent(self, obj, parent_obj):
+    def link_to_parent(self, obj, parent_obj, form):
         setattr(obj, self.parent_lookup, parent_obj)
         
     def save_model(self, request, obj, form, change):
-        parent_chain = request.parent_chain
-        parent_obj = (parent_chain and parent_chain[-1]) or None
+        
+        parent_obj = self.get_parent_obj(request)
         
         if not change:
-            self.link_to_parent(obj, parent_obj)
+            self.link_to_parent(obj, parent_obj, form)
         
         super(HierarchicalModelAdmin, self).save_model(request, obj, form, change)
