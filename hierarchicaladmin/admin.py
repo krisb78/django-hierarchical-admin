@@ -20,6 +20,7 @@ from django.utils.html import escape
 from django.utils.encoding import force_unicode
 from django.http import Http404
 
+from hierarchicaladmin.exceptions import DashboardOverride
 
 class HierarchicalModelAdmin(admin.ModelAdmin):
     parent_admin = None
@@ -205,27 +206,37 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         )
         return self.get_sub_urls() + urlpatterns
 
-
-    def change_view(self, request, object_id, extra_context=None):
-        if not self._registry:
-            return super(HierarchicalModelAdmin, self).change_view(request, object_id, extra_context)
+    def show_dashboard(self, request, obj):
+        """Determines if a dashboard is to be shown in change view,
+        instead of the default form. Dashboard is shown by default
+        if the current admin has any children"""
+        return self._registry
+    
+    def get_form(self, request, obj=None, **kwargs):
         
+        # If we have an object and a dasboard is to be shown,
+        # raise a DashboardOverride exception, passing the obj
+        # to the constructor        
+        if obj and self.show_dashboard(request, obj):
+            raise DashboardOverride(obj)
+        
+        # Otherwise just return the form        
+        return super(HierarchicalModelAdmin, self).get_form(request, obj, **kwargs)
+    
+    def change_view(self, request, object_id, extra_context=None):
+        
+        # Try to return the default chante view. If a DashboardOverride is caught,
+        # return dashboard_view        
+        try:
+            return super(HierarchicalModelAdmin, self).change_view(request, object_id, extra_context)
+        except DashboardOverride, e:
+            return self.dashboard_view(request, e.obj, extra_context)
+    
+    def dashboard_view(self, request, obj, extra_context=None):        
         """
         Displays the main admin index page, which lists all of the installed
         apps that have been registered in this site.
-        """
-        model = self.model
-        opts = model._meta
-
-        obj = self.get_object(request, unquote(object_id))
-
-        if not self.has_change_permission(request, obj):
-            raise PermissionDenied
-
-        if obj is None:
-            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_unicode(opts.verbose_name), 'key': escape(object_id)})
-
-        
+        """        
         app_dict = {}
         user = request.user
         for model, model_admin in self._registry.items():
