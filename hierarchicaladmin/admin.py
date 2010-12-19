@@ -170,10 +170,7 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
             return self.admin_site.admin_view(view)(request, *args, **kwargs)
         return update_wrapper(wrapper, view)
 
-            
-    def get_urls(self):
-        from django.conf.urls.defaults import patterns, url
-
+    def get_info(self):
         parent_admin = self.parent_admin
         parent_chain = []
         while parent_admin is not None:
@@ -188,6 +185,12 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         info = (prefix,
                 self.model._meta.app_label, 
                 self.model._meta.module_name)
+        return info
+            
+    def get_urls(self):
+        from django.conf.urls.defaults import patterns, url
+
+        info = self.get_info()
             
         urlpatterns = patterns('',
             url(r'^$',
