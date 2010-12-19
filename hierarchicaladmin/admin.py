@@ -174,26 +174,6 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url
 
-#        def wrap(view):
-#            def wrapper(request, *args, **kwargs):
-#                parent_admin = self.parent_admin
-#                if 'extra_context' not in kwargs:
-#                    kwargs['extra_context'] = {}
-#                parent_id_chain = []
-#                while parent_admin is not None:
-#                    parent_opts = parent_admin.opts
-#                    parent_id = kwargs.pop('%s_id' % parent_opts.module_name)
-#                    parent_id_chain.append( parent_id )
-#                    parent_admin = parent_admin.parent_admin
-#                
-#                request.parent_id_chain = parent_id_chain
-#                self.get_parent_chain(request)
-#                
-#                kwargs['extra_context'].update({'parent_chain' : request.parent_chain })
-#                return self.admin_site.admin_view(view)(request, *args, **kwargs)
-#            return update_wrapper(wrapper, view)
-        
-
         parent_admin = self.parent_admin
         parent_chain = []
         while parent_admin is not None:
