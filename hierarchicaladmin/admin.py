@@ -150,28 +150,48 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         parent_chain = request.parent_chain
         parent_obj = (parent_chain and parent_chain[-1]) or None        
         return parent_obj
+
+    def wrap_view(self, view):
+        def wrapper(request, *args, **kwargs):
+            parent_admin = self.parent_admin
+            if 'extra_context' not in kwargs:
+                kwargs['extra_context'] = {}
+            parent_id_chain = []
+            while parent_admin is not None:
+                parent_opts = parent_admin.opts
+                parent_id = kwargs.pop('%s_id' % parent_opts.module_name)
+                parent_id_chain.append( parent_id )
+                parent_admin = parent_admin.parent_admin
+            
+            request.parent_id_chain = parent_id_chain
+            self.get_parent_chain(request)
+            
+            kwargs['extra_context'].update({'parent_chain' : request.parent_chain })
+            return self.admin_site.admin_view(view)(request, *args, **kwargs)
+        return update_wrapper(wrapper, view)
+
             
     def get_urls(self):
         from django.conf.urls.defaults import patterns, url
 
-        def wrap(view):
-            def wrapper(request, *args, **kwargs):
-                parent_admin = self.parent_admin
-                if 'extra_context' not in kwargs:
-                    kwargs['extra_context'] = {}
-                parent_id_chain = []
-                while parent_admin is not None:
-                    parent_opts = parent_admin.opts
-                    parent_id = kwargs.pop('%s_id' % parent_opts.module_name)
-                    parent_id_chain.append( parent_id )
-                    parent_admin = parent_admin.parent_admin
-                
-                request.parent_id_chain = parent_id_chain
-                self.get_parent_chain(request)
-                
-                kwargs['extra_context'].update({'parent_chain' : request.parent_chain })
-                return self.admin_site.admin_view(view)(request, *args, **kwargs)
-            return update_wrapper(wrapper, view)
+#        def wrap(view):
+#            def wrapper(request, *args, **kwargs):
+#                parent_admin = self.parent_admin
+#                if 'extra_context' not in kwargs:
+#                    kwargs['extra_context'] = {}
+#                parent_id_chain = []
+#                while parent_admin is not None:
+#                    parent_opts = parent_admin.opts
+#                    parent_id = kwargs.pop('%s_id' % parent_opts.module_name)
+#                    parent_id_chain.append( parent_id )
+#                    parent_admin = parent_admin.parent_admin
+#                
+#                request.parent_id_chain = parent_id_chain
+#                self.get_parent_chain(request)
+#                
+#                kwargs['extra_context'].update({'parent_chain' : request.parent_chain })
+#                return self.admin_site.admin_view(view)(request, *args, **kwargs)
+#            return update_wrapper(wrapper, view)
         
 
         parent_admin = self.parent_admin
@@ -191,19 +211,19 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
             
         urlpatterns = patterns('',
             url(r'^$',
-                wrap(self.changelist_view),
+                self.wrap_view(self.changelist_view),
                 name='%s%s_%s_changelist' % info),
             url(r'^add/$',
-                wrap(self.add_view),
+                self.wrap_view(self.add_view),
                 name='%s%s_%s_add' % info),
             url(r'^(?P<object_id>.+)/history/$',
-                wrap(self.history_view),
+                self.wrap_view(self.history_view),
                 name='%s%s_%s_history' % info),
             url(r'^(?P<object_id>.+)/delete/$',
-                wrap(self.delete_view),
+                self.wrap_view(self.delete_view),
                 name='%s%s_%s_delete' % info),
             url(r'^(?P<object_id>.+)/$',
-                wrap(self.change_view),
+                self.wrap_view(self.change_view),
                 name='%s%s_%s_change' % info),
         )
         return self.get_sub_urls() + urlpatterns
