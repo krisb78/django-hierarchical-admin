@@ -225,8 +225,15 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         if obj and self.show_dashboard(request, obj):
             raise DashboardOverride(obj)
         
-        # Otherwise just return the form        
-        return super(HierarchicalModelAdmin, self).get_form(request, obj, **kwargs)
+        # Otherwise just return the form
+                
+        form = super(HierarchicalModelAdmin, self).get_form(request, obj, **kwargs)
+        
+        # Store parent chain in form, might be useful
+        # for validation
+        form._parent_chain = request.parent_chain
+        form._model_admin = self
+        return form
     
     def change_view(self, request, object_id, extra_context=None):
         
