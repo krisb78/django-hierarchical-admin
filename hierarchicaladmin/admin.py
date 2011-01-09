@@ -80,7 +80,9 @@ class DashboardAdmin(admin.ModelAdmin):
             'original' : obj,
             'opts' : obj._meta,
             'app_label': opts.app_label,
-#            'can_view_index' : self.can_view_index(request),
+            'has_add_permission': self.has_add_permission(request),
+            'has_change_permission': self.has_change_permission(request, obj),
+            'has_delete_permission': self.has_delete_permission(request, obj),
         }
         context.update(extra_context or {})
         context_instance = template.RequestContext(request, current_app=self.admin_site.name)
@@ -133,7 +135,7 @@ class DashboardAdmin(admin.ModelAdmin):
                 self.wrap_view(self.change_view),
                 name='%s%s_%s_change' % info),
         )
-        return self.get_sub_urls() + urlpatterns
+        return urlpatterns
 
 
 class HierarchicalModelAdmin(DashboardAdmin):
