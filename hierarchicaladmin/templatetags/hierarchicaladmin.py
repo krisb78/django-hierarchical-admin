@@ -8,12 +8,12 @@ from django import template
 register = template.Library()
 
 @register.inclusion_tag('hierarchicaladmin/breadcrumbs.html')
-def hierarchical_breadcrumbs(parent_chain, upinit=''):
+def hierarchical_breadcrumbs(parent_chain, upinit='', edit_details=False):
     parents = list(parent_chain)
     parents.reverse()
     breadcrumbs = []
     href = upinit
-    
+        
     for parent in parents:
         href += '../'
         parent_obj_breadcrumb = parent, href
@@ -24,7 +24,9 @@ def hierarchical_breadcrumbs(parent_chain, upinit=''):
     
     breadcrumbs.reverse()
     
+        
     return {
             'breadcrumbs' : breadcrumbs,
+            'prefix': ('../' and edit_details) or ''
             }
     

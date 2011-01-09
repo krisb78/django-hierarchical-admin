@@ -22,10 +22,126 @@ from django.http import Http404
 
 from hierarchicaladmin.exceptions import DashboardOverride
 
-class HierarchicalModelAdmin(admin.ModelAdmin):
+class DashboardAdmin(admin.ModelAdmin):
+    dashboard_template = None
+    dashboard_template_file = 'dashboard.html'
+    
+    def show_dashboard(self, request, obj):
+        return True
+    
+    def can_edit_details(self, request, obj):
+        # By default, if a user has the change permission
+        # and dashboard is to be shown,
+        # the user can also edit details.
+        # Override this if a different behaviour is required.
+        return self.show_dashboard(request, obj) and self.has_change_permission(request, obj)
+    
+    def change_view(self, request, object_id, extra_context=None):
+        
+        # Try to return the default chante view. If a DashboardOverride is caught,
+        # return dashboard_view        
+        try:
+            return super(DashboardAdmin, self).change_view(request, object_id, extra_context)
+        except DashboardOverride, e:
+            return self.dashboard_view(request, e.obj, extra_context)
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Get the edit details flag from the request
+        # (this could be set by edit_details_view)
+        edit_details = request.hierarchical_options.get('edit_details', False)
+        
+        # Check if the user is allowed to edit details
+        edit_details = edit_details and self.can_edit_details(request, obj)
+        
+        # If we have an object and a dasboard is to be shown,
+        # raise a DashboardOverride exception, passing the obj
+        # to the constructor        
+        if obj and self.show_dashboard(request, obj) and not edit_details:
+            raise DashboardOverride(obj)
+        
+        # Otherwise just return the form
+                
+        return super(DashboardAdmin, self).get_form(request, obj, **kwargs)
+        
+    def edit_details_view(self, request, object_id, extra_context=None):
+        request.hierarchical_options['edit_details'] = True
+        return self.change_view(request, object_id, extra_context)
+    
+    def dashboard_view(self, request, obj, extra_context=None):        
+        """
+        Displays the main admin index page, which lists all of the installed
+        apps that have been registered in this site.
+        """        
+        model = self.model
+        opts = model._meta
+
+        context = {
+            'title': u'%s' % obj,
+            'original' : obj,
+            'opts' : obj._meta,
+            'app_label': opts.app_label,
+#            'can_view_index' : self.can_view_index(request),
+        }
+        context.update(extra_context or {})
+        context_instance = template.RequestContext(request, current_app=self.admin_site.name)
+        model = self.model
+        opts = model._meta
+        app_label = opts.app_label
+        dashboard_template_file = self.dashboard_template_file
+        return render_to_response(self.dashboard_template or [ 
+            "admin/%s/%s/%s" % (app_label, opts.object_name.lower(), dashboard_template_file),
+            "admin/%s/%s" % (app_label, dashboard_template_file),
+            "admin/%s" % dashboard_template_file],                                  
+            context,
+            context_instance=context_instance
+        )
+        
+    def wrap_view(self, view):
+        def wrapper(request, *args, **kwargs):
+            return self.admin_site.admin_view(view)(request, *args, **kwargs)
+        return update_wrapper(wrapper, view)
+
+    def get_prefix(self):
+        return ''
+
+    def get_info(self):
+        prefix = self.get_prefix()
+        info = (prefix,
+                self.model._meta.app_label, 
+                self.model._meta.module_name)
+        return info
+
+    def get_urls(self):
+        from django.conf.urls.defaults import patterns, url
+
+        info = self.get_info()
+            
+        urlpatterns = patterns('',
+            url(r'^$',
+                self.wrap_view(self.changelist_view),
+                name='%s%s_%s_changelist' % info),
+            url(r'^add/$',
+                self.wrap_view(self.add_view),
+                name='%s%s_%s_add' % info),
+            url(r'^(?P<object_id>.+)/history/$',
+                self.wrap_view(self.history_view),
+                name='%s%s_%s_history' % info),
+            url(r'^(?P<object_id>.+)/delete/$',
+                self.wrap_view(self.delete_view),
+                name='%s%s_%s_delete' % info),
+            url(r'^(?P<object_id>.+)/$',
+                self.wrap_view(self.change_view),
+                name='%s%s_%s_change' % info),
+        )
+        return self.get_sub_urls() + urlpatterns
+
+
+class HierarchicalModelAdmin(DashboardAdmin):
+    
+    dashboard_template_file = 'hierarchical_dashboard.html'
+    
     parent_admin = None
     parent_opts = None
-    index_template = None
     change_list_template = 'hierarchicaladmin/change_list.html'
     change_form_template = 'hierarchicaladmin/change_form.html'
     delete_confirmation_template = 'hierarchicaladmin/delete_confirmation.html'
@@ -50,8 +166,8 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
     def parent_lookup(self):
         return '%s' % self.parent_opts.module_name
     
-    def can_view_index(self, request):
-        return True
+#    def can_view_index(self, request):
+#        return True
             
     def register(self, model_or_iterable, admin_class=None, **options):
         """
@@ -170,7 +286,7 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
             return self.admin_site.admin_view(view)(request, *args, **kwargs)
         return update_wrapper(wrapper, view)
 
-    def get_info(self):
+    def get_prefix(self):
         parent_admin = self.parent_admin
         parent_chain = []
         while parent_admin is not None:
@@ -181,35 +297,34 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         prefix = '_'.join(parent_chain)
         if prefix:
             prefix += '_'
-
-        info = (prefix,
-                self.model._meta.app_label, 
-                self.model._meta.module_name)
-        return info
+        return prefix
             
     def get_urls(self):
-        from django.conf.urls.defaults import patterns, url
-
-        info = self.get_info()
+#        from django.conf.urls.defaults import patterns, url
+#
+#        info = self.get_info()
             
-        urlpatterns = patterns('',
-            url(r'^$',
-                self.wrap_view(self.changelist_view),
-                name='%s%s_%s_changelist' % info),
-            url(r'^add/$',
-                self.wrap_view(self.add_view),
-                name='%s%s_%s_add' % info),
-            url(r'^(?P<object_id>.+)/history/$',
-                self.wrap_view(self.history_view),
-                name='%s%s_%s_history' % info),
-            url(r'^(?P<object_id>.+)/delete/$',
-                self.wrap_view(self.delete_view),
-                name='%s%s_%s_delete' % info),
-            url(r'^(?P<object_id>.+)/$',
-                self.wrap_view(self.change_view),
-                name='%s%s_%s_change' % info),
-        )
-        return self.get_sub_urls() + urlpatterns
+#        urlpatterns = patterns('',
+#            url(r'^$',
+#                self.wrap_view(self.changelist_view),
+#                name='%s%s_%s_changelist' % info),
+#            url(r'^add/$',
+#                self.wrap_view(self.add_view),
+#                name='%s%s_%s_add' % info),
+#            url(r'^(?P<object_id>.+)/history/$',
+#                self.wrap_view(self.history_view),
+#                name='%s%s_%s_history' % info),
+#            url(r'^(?P<object_id>.+)/delete/$',
+#                self.wrap_view(self.delete_view),
+#                name='%s%s_%s_delete' % info),
+#            url(r'^(?P<object_id>.+)/$',
+#                self.wrap_view(self.change_view),
+#                name='%s%s_%s_change' % info),
+#        )
+#        return self.get_sub_urls() + urlpatterns
+        urls = super(HierarchicalModelAdmin, self).get_urls()
+        return self.get_sub_urls() + urls
+
 
     def show_dashboard(self, request, obj):
         """Determines if a dashboard is to be shown in change view,
@@ -218,15 +333,7 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         return self._registry
     
     def get_form(self, request, obj=None, **kwargs):
-        
-        # If we have an object and a dasboard is to be shown,
-        # raise a DashboardOverride exception, passing the obj
-        # to the constructor        
-        if obj and self.show_dashboard(request, obj):
-            raise DashboardOverride(obj)
-        
-        # Otherwise just return the form
-                
+                        
         form = super(HierarchicalModelAdmin, self).get_form(request, obj, **kwargs)
         
         # Store parent chain in form, might be useful
@@ -234,21 +341,8 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         form._parent_chain = request.parent_chain
         form._model_admin = self
         return form
-    
-    def change_view(self, request, object_id, extra_context=None):
-        
-        # Try to return the default chante view. If a DashboardOverride is caught,
-        # return dashboard_view        
-        try:
-            return super(HierarchicalModelAdmin, self).change_view(request, object_id, extra_context)
-        except DashboardOverride, e:
-            return self.dashboard_view(request, e.obj, extra_context)
-    
-    def dashboard_view(self, request, obj, extra_context=None):        
-        """
-        Displays the main admin index page, which lists all of the installed
-        apps that have been registered in this site.
-        """        
+
+    def dashboard_view(self, request, obj, extra_context=None):
         model = self.model
         opts = model._meta
         app_dict = {}
@@ -285,28 +379,15 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         # Sort the models alphabetically within each app.
         for app in app_list:
             app['models'].sort(key=lambda x: x['name'])
-
+            
         context = {
-            'title': u'%s' % obj,
-            'original' : obj,
-            'opts' : obj._meta,
-            'app_list': app_list,
+            'app_list': app_list,                   
             'root_path': self.root_path,
-            'can_view_index' : self.can_view_index(request),
         }
         context.update(extra_context or {})
-        context_instance = template.RequestContext(request, current_app=self.admin_site.name)
-        model = self.model
-        opts = model._meta
-        app_label = opts.app_label
-        return render_to_response(self.index_template or [ 
-            "admin/%s/%s/hierarchical_dashboard.html" % (app_label, opts.object_name.lower()),
-            "admin/%s/hierarchical_dashboard.html" % app_label,
-            "admin/hierarchical_dashboard.html"],                                  
-            context,
-            context_instance=context_instance
-        )
-
+        return super(HierarchicalModelAdmin, 
+                     self).dashboard_view(request, obj, extra_context=context)
+    
     def link_to_parent(self, request, obj, parent_obj, form):
         setattr(obj, self.parent_lookup, parent_obj)
         

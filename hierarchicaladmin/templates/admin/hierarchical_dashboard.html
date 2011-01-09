@@ -1,4 +1,4 @@
-{% extends "admin/index.html" %}
+{% extends "admin/dashboard.html" %}
 {% load i18n hierarchicaladmin %}
 
 {% block breadcrumbs %}
@@ -11,8 +11,7 @@
 {% endif %}
 {% endblock %}
 
-{% block content %}
-<div id="content-main">
+{% block dashboard-content %}
 
 {% if app_list %}
     {% for app in app_list %}
@@ -44,7 +43,7 @@
         </div>
     {% endfor %}
 {% endif %}
-</div>
+
 {% endblock %}
 
 
