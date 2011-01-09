@@ -314,7 +314,7 @@ class HierarchicalModelAdmin(admin.ModelAdmin):
         
         parent_obj = self.get_parent_obj(request)
         
-        if not change:
+        if not change and parent_obj:
             self.link_to_parent(request, obj, parent_obj, form)
         
         super(HierarchicalModelAdmin, self).save_model(request, obj, form, change)
