@@ -302,28 +302,7 @@ class HierarchicalModelAdmin(DashboardAdmin):
         return prefix
             
     def get_urls(self):
-#        from django.conf.urls.defaults import patterns, url
-#
-#        info = self.get_info()
-            
-#        urlpatterns = patterns('',
-#            url(r'^$',
-#                self.wrap_view(self.changelist_view),
-#                name='%s%s_%s_changelist' % info),
-#            url(r'^add/$',
-#                self.wrap_view(self.add_view),
-#                name='%s%s_%s_add' % info),
-#            url(r'^(?P<object_id>.+)/history/$',
-#                self.wrap_view(self.history_view),
-#                name='%s%s_%s_history' % info),
-#            url(r'^(?P<object_id>.+)/delete/$',
-#                self.wrap_view(self.delete_view),
-#                name='%s%s_%s_delete' % info),
-#            url(r'^(?P<object_id>.+)/$',
-#                self.wrap_view(self.change_view),
-#                name='%s%s_%s_change' % info),
-#        )
-#        return self.get_sub_urls() + urlpatterns
+        # Just need to add sub_urls here...
         urls = super(HierarchicalModelAdmin, self).get_urls()
         return self.get_sub_urls() + urls
 
