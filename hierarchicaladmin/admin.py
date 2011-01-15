@@ -25,6 +25,7 @@ from hierarchicaladmin.exceptions import DashboardOverride
 class DashboardAdmin(admin.ModelAdmin):
     dashboard_template = None
     dashboard_template_file = 'dashboard.html'
+    edit_details = True
     
     def show_dashboard(self, request, obj):
         return True
@@ -34,8 +35,30 @@ class DashboardAdmin(admin.ModelAdmin):
         # and dashboard is to be shown,
         # the user can also edit details.
         # Override this if a different behaviour is required.
-        return self.show_dashboard(request, obj) and self.has_change_permission(request, obj)
-    
+        return self.edit_details \
+               and self.show_dashboard(request, obj) \
+               and self.has_change_permission(request, obj)
+
+    def has_add_permission(self, request):
+        # This is here to make the 'save and add another' button
+        # disappear from the edit details page        
+        edit_details = request.hierarchical_options.get('edit_details', False)
+        if edit_details:
+            return False
+        
+        return super(DashboardAdmin, 
+                     self).has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        # This is here to make the 'delete' link 
+        # disappear from the edit details page        
+        edit_details = request.hierarchical_options.get('edit_details', False)
+        if edit_details:
+            return False
+        
+        return super(DashboardAdmin,
+                     self).has_delete_permission(request, obj)
+                         
     def change_view(self, request, object_id, extra_context=None):
         
         # Try to return the default chante view. If a DashboardOverride is caught,
@@ -65,7 +88,9 @@ class DashboardAdmin(admin.ModelAdmin):
         
     def edit_details_view(self, request, object_id, extra_context=None):
         request.hierarchical_options['edit_details'] = True
-        return self.change_view(request, object_id, extra_context)
+        context = {'edit_details' : True}
+        context.update(extra_context or {})
+        return self.change_view(request, object_id, context)
     
     def dashboard_view(self, request, obj, extra_context=None):        
         """
@@ -83,6 +108,7 @@ class DashboardAdmin(admin.ModelAdmin):
             'has_add_permission': self.has_add_permission(request),
             'has_change_permission': self.has_change_permission(request, obj),
             'has_delete_permission': self.has_delete_permission(request, obj),
+            'can_edit_details' : self.can_edit_details(request, obj),
         }
         context.update(extra_context or {})
         context_instance = template.RequestContext(request, current_app=self.admin_site.name)
@@ -125,6 +151,9 @@ class DashboardAdmin(admin.ModelAdmin):
             url(r'^add/$',
                 self.wrap_view(self.add_view),
                 name='%s%s_%s_add' % info),
+            url(r'^(?P<object_id>.+)/edit_details/$',
+                self.wrap_view(self.edit_details_view),
+                name='%s%s_%s_history' % info),
             url(r'^(?P<object_id>.+)/history/$',
                 self.wrap_view(self.history_view),
                 name='%s%s_%s_history' % info),
