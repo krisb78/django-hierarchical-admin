@@ -18,9 +18,9 @@ from django.utils.text import capfirst
 from django.utils.translation import ugettext as _
 from django.utils.html import escape
 from django.utils.encoding import force_unicode
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 
-from hierarchicaladmin.exceptions import DashboardOverride
+from hierarchicaladmin.exceptions import DashboardOverride, ForceDetailsReview
 
 class DashboardAdmin(admin.ModelAdmin):
     dashboard_template = None
@@ -67,23 +67,38 @@ class DashboardAdmin(admin.ModelAdmin):
             return super(DashboardAdmin, self).change_view(request, object_id, extra_context)
         except DashboardOverride, e:
             return self.dashboard_view(request, e.obj, extra_context)
+        except ForceDetailsReview, e:
+            return HttpResponseRedirect('edit_details/')
+
+    def force_details_review(self, request, obj):
+        """Override this to force user to review details of the object.
+        If you want to display a message explaining why the user
+        was forced to edit the object's details, override change_form
+        and add a message just before returning the form.
+        """
+        return False
 
     def get_form(self, request, obj=None, **kwargs):
         # Get the edit details flag from the request
         # (this could be set by edit_details_view)
         edit_details = request.hierarchical_options.get('edit_details', False)
+        can_edit_details = self.can_edit_details(request, obj)
         
         # Check if the user is allowed to edit details
-        edit_details = edit_details and self.can_edit_details(request, obj)
+        edit_details = obj and edit_details and can_edit_details
+        
+        force_details_review = can_edit_details and self.force_details_review(request, obj)         
         
         # If we have an object and a dasboard is to be shown,
         # raise a DashboardOverride exception, passing the obj
         # to the constructor        
         if obj and self.show_dashboard(request, obj) and not edit_details:
+            if force_details_review:
+                raise ForceDetailsReview(obj)
             raise DashboardOverride(obj)
-        
-        # Otherwise just return the form
                 
+        # Otherwise just return the form, but first check if there is 
+        # nothing that has to be done with the object.
         return super(DashboardAdmin, self).get_form(request, obj, **kwargs)
         
     def edit_details_view(self, request, object_id, extra_context=None):
