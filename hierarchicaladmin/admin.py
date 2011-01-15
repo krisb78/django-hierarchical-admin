@@ -168,7 +168,7 @@ class DashboardAdmin(admin.ModelAdmin):
                 name='%s%s_%s_add' % info),
             url(r'^(?P<object_id>.+)/edit_details/$',
                 self.wrap_view(self.edit_details_view),
-                name='%s%s_%s_history' % info),
+                name='%s%s_%s_edit_details' % info),
             url(r'^(?P<object_id>.+)/history/$',
                 self.wrap_view(self.history_view),
                 name='%s%s_%s_history' % info),
