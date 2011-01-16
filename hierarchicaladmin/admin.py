@@ -84,6 +84,11 @@ class DashboardAdmin(admin.ModelAdmin):
         edit_details = request.hierarchical_options.get('edit_details', False)
         can_edit_details = self.can_edit_details(request, obj)
         
+        # If someone tries to edit details when not allowed,
+        # raise Http404        
+        if edit_details and not can_edit_details:
+            raise Http404
+        
         # Check if the user is allowed to edit details
         edit_details = obj and edit_details and can_edit_details
         
