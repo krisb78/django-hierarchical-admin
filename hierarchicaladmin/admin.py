@@ -27,6 +27,21 @@ class DashboardAdmin(admin.ModelAdmin):
     dashboard_template_file = 'dashboard.html'
     edit_details = True
     
+    def get_object_to_change(self, request, object_id):
+        """Helper method for getting an object and checking
+        permissions to change."""
+        model = self.model
+        opts = model._meta
+
+        obj = self.get_object(request, unquote(object_id))
+
+        if not self.has_change_permission(request, obj):
+            raise PermissionDenied
+
+        if obj is None:
+            raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_unicode(opts.verbose_name), 'key': escape(object_id)})    
+        return obj
+    
     def show_dashboard(self, request, obj):
         return True
     
