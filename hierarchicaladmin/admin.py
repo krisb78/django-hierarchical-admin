@@ -435,12 +435,23 @@ class HierarchicalModelAdmin(DashboardAdmin):
     
     def link_to_parent(self, request, obj, parent_obj, form):
         setattr(obj, self.parent_lookup, parent_obj)
-        
-    def save_model(self, request, obj, form, change):
+
+    def save_form(self, request, form, change):
+        obj = super(HierarchicalModelAdmin,
+                    self).save_form(request, form, change)
         
         parent_obj = self.get_parent_obj(request)
         
         if not change and parent_obj:
             self.link_to_parent(request, obj, parent_obj, form)
         
-        super(HierarchicalModelAdmin, self).save_model(request, obj, form, change)
+        return obj
+    
+#    def save_model(self, request, obj, form, change):
+#        
+#        parent_obj = self.get_parent_obj(request)
+#        
+#        if not change and parent_obj:
+#            self.link_to_parent(request, obj, parent_obj, form)
+#        
+#        super(HierarchicalModelAdmin, self).save_model(request, obj, form, change)
