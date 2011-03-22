@@ -25,6 +25,7 @@ from hierarchicaladmin.exceptions import DashboardOverride, ForceDetailsReview
 class DashboardAdmin(admin.ModelAdmin):
     dashboard_template = None
     dashboard_template_file = 'dashboard.html'
+    change_form_template = 'dashboardadmin/change_form.html'
     edit_details = True
     
     def get_object_to_change(self, request, object_id):

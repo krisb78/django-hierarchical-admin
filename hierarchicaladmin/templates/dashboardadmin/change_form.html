@@ -1,0 +1,22 @@
+{% extends "admin/change_form.html" %}
+{% load i18n hierarchicaladmin %}
+
+{% block breadcrumbs %}
+{% if not edit_details %}
+{{ block.super }}
+{% else %}
+{% if not is_popup %}
+<div class="breadcrumbs">
+     <a href="../../../../">{% trans "Home" %}</a> &rsaquo;
+     <a href="../../../">{{ app_label|capfirst|escape }}</a> &rsaquo;
+     {% if has_change_permission %}<a href="../../">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %} &rsaquo;
+     <a href="../">{{ original|truncatewords:"18" }}</a> &rsaquo;
+     {% trans 'Edit details' %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block object-tools %}
+{% if not edit_details %}{{ block.super }}{% endif %}
+{% endblock %}
