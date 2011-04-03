@@ -26,8 +26,10 @@
   </ul>
 {% endif %}
 {% endblock %}
+<div id="dashboard-content" class="{% block dashboard-content-class %}{% endblock %}">
 {% block dashboard-content %}
 {% endblock %}
+</div>
 </div>
 {% endblock %}
 
