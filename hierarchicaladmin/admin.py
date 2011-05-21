@@ -337,8 +337,6 @@ class HierarchicalModelAdmin(DashboardAdmin):
     def wrap_view(self, view):
         def wrapper(request, *args, **kwargs):
             parent_admin = self.parent_admin
-            if 'extra_context' not in kwargs:
-                kwargs['extra_context'] = {}
             parent_id_chain = []
             while parent_admin is not None:
                 parent_opts = parent_admin.opts
@@ -349,7 +347,12 @@ class HierarchicalModelAdmin(DashboardAdmin):
             request.parent_id_chain = parent_id_chain
             self.get_parent_chain(request)
             
-            kwargs['extra_context'].update({'parent_chain' : request.parent_chain })
+            if 'extra_context' in view.func_code.co_varnames:
+                if 'extra_context' not in kwargs:
+                    kwargs['extra_context'] = {}
+            
+                kwargs['extra_context'].update({'parent_chain' : request.parent_chain })
+                
             return self.admin_site.admin_view(view)(request, *args, **kwargs)
         return update_wrapper(wrapper, view)
 
