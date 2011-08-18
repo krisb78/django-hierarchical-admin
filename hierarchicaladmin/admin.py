@@ -347,13 +347,7 @@ class HierarchicalModelAdmin(DashboardAdmin):
             
             request.parent_id_chain = parent_id_chain
             self.get_parent_chain(request)
-            
-            if 'extra_context' in view.func_code.co_varnames:
-                if 'extra_context' not in kwargs:
-                    kwargs['extra_context'] = {}
-            
-                kwargs['extra_context'].update({'parent_chain' : request.parent_chain })
-                
+                            
             return self.admin_site.admin_view(view)(request, *args, **kwargs)
         return update_wrapper(wrapper, view)
 

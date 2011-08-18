@@ -5,12 +5,12 @@
 {% if not is_popup %}
     <div class="breadcrumbs">
          {% if edit_details %}
-         {% hierarchical_breadcrumbs parent_chain "../../" %}
+         {% hierarchical_breadcrumbs request.parent_chain "../../" %}
          {% if has_change_permission %}<a href="../../">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %} &rsaquo; 
          <a href="../">{{ original|truncatewords:"18" }}</a> &rsaquo;
          {% trans "Edit details" %}
          {% else %}
-         {% hierarchical_breadcrumbs parent_chain "../" %}
+         {% hierarchical_breadcrumbs request.parent_chain "../" %}
          {% if has_change_permission %}<a href="../">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %} &rsaquo; 
          {% if add %}{% trans "Add" %} {{ opts.verbose_name }}{% else %}{{ original|truncatewords:"18" }}{% endif %}
          {% endif %}
