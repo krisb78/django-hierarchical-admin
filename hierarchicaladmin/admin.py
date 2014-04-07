@@ -127,7 +127,7 @@ class DashboardAdmin(admin.ModelAdmin):
         context = {'edit_details' : True,
                    'title': _(u'Edit details')}
         context.update(extra_context or {})
-        return self.change_view(request, object_id, context)
+        return self.change_view(request, object_id, extra_context=context)
     
     def dashboard_view(self, request, obj, extra_context=None):        
         """
