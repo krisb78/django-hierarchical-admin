@@ -80,7 +80,7 @@ class DashboardAdmin(admin.ModelAdmin):
         # Try to return the default chante view. If a DashboardOverride is caught,
         # return dashboard_view        
         try:
-            return super(DashboardAdmin, self).change_view(request, object_id, extra_context)
+            return super(DashboardAdmin, self).change_view(request, object_id, extra_context=extra_context)
         except DashboardOverride, e:
             return self.dashboard_view(request, e.obj, extra_context)
         except ForceDetailsReview, e:
